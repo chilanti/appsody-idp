@@ -1,0 +1,78 @@
+[
+    {
+        "name": "microprofile",
+        "description": "Java Microprofile Iterative-Dev Pack using the IDP runtime task model",
+        "language": "java",
+        "framework": "liberty",
+        "devpack": {
+            "self": "/java/liberty/idp.yaml"
+        },
+        "artifacts": [
+            "/java/liberty/bin/runtime-container-full.sh",
+            "/java/liberty/bin/runtime-container-update.sh"
+        ]
+    },
+    {
+        "name": "microprofile-buildtasks",
+        "description": "Java Microprofile Iterative-Dev Pack using the IDP build task model",
+        "language": "java",
+        "framework": "liberty",
+        "devpack": {
+            "self": "/java/liberty-buildtasks/idp.yaml"
+        },
+        "artifacts": [
+            "/java/liberty-buildtasks/bin/build-container-full.sh",
+            "/java/liberty-buildtasks/bin/build-container-update.sh"
+        ]
+    },
+    {
+        "name": "spring",
+        "description": "Java Spring Iterative-Dev Pack using the IDP runtime task model",
+        "language": "java",
+        "framework": "liberty",
+        "devpack": {
+            "self": "/java/spring/idp.yaml"
+        },
+        "artifacts": [
+            "/java/spring/bin/runtime-container-full.sh"
+        ]
+    },
+    {
+        "name": "spring-buildtasks",
+        "description": "Java Spring Iterative-Dev Pack using the IDP build task model",
+        "language": "java",
+        "framework": "liberty",
+        "devpack": {
+            "self": "/java/spring-buildtasks/idp.yaml"
+        },
+        "artifacts": [
+            "/java/spring-buildtasks/bin/build-container-full.sh",
+            "/java/spring-buildtasks/bin/start-server.sh"
+        ]
+    },
+    {
+        "name": "nodejs",
+        "description": "NodeJS sample",
+        "language": "javascript",
+        "framework": "nodejs",
+        "devpack": {
+            "self": "/javascript/nodejs/idp.yaml"
+        },
+        "artifacts": [
+            "/javascript/nodejs/bin/npm-start.sh"
+        ]
+    },
+    {
+        "name": "appsody-nodejs",
+        "description": "NodeJS sample",
+        "language": "javascript",
+        "framework": "nodejs",
+        "devpack": {
+            "self": "/javascript/appsody-nodejs/idp.yaml"
+        },
+        "artifacts": [
+            "/javascript/appsody-nodejs/bin/npm-start.sh",
+            "/javascript/appsody-nodejs/bin/npm-restart.sh"            
+        ]
+    }    
+]
