@@ -5,7 +5,7 @@ set -x
 #cp -R /volume-mount/app/* /project/user-app
 ls -latr /project/user-app
 ls -latr /project
-ls -latr /volume-mount
+#ls -latr /volume-mount
 #cd /project
 
 #npm install
