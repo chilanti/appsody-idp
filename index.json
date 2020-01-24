@@ -74,5 +74,18 @@
             "/javascript/appsody-nodejs/bin/npm-start.sh",
             "/javascript/appsody-nodejs/bin/npm-restart.sh"            
         ]
-    }    
+    },
+    {
+        "name": "appsody-openliberty",
+        "description": "[appsody] Java Microprofile Iterative-Dev Pack using the IDP runtime task model",
+        "language": "java",
+        "framework": "liberty",
+        "devpack": {
+            "self": "/java/appsody-liberty/idp.yaml"
+        },
+        "artifacts": [
+            "/java/appsody-liberty/bin/runtime-container-full.sh",
+            "/java/appsody-liberty/bin/runtime-container-update.sh"
+        ]
+    }
 ]
