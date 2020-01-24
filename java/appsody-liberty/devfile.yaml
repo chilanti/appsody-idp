@@ -1,0 +1,156 @@
+# This doc was originally copied from https://github.ibm.com/jgwest/docs/blob/master/New-Dev-File.md commit 6bfc413 on Dec 13, 2019
+---
+apiVersion: 1.0.0
+
+# DISCUSSION: There are a number of useful fields in dev file's `meta.yaml`, like displayName and tags, which we COULD move in here, or just leave there.
+version: 0.0.1  # Optional: A version string to allow identification of dev file versions, for update/upgrade scenarios.
+
+metadata:
+  generateName:  (value) # as before
+
+projects:
+# (no changes to existing `projects` definition)
+
+# shared:
+    
+#   # NEW: Volumes used by components of type `dockerImage` are defined here.
+#   volumes: 
+#   - name: my-data-volume
+#     type: emptyDir #  Optional, one of: emptyDir (empty-dir backed volume), persistentVolume (ODO/CHE create a new PV), or existingVolume (use an existing volume with that name)... optional with default being emptyDir
+#     #
+#     # DISCUSSION: type (and it's available values) is my initial attempt to unify a number of possible uses for volumes... feedback is welcome!
+#     # This allows users to persist their application data to a new/existing volume if needed (persistentVolume/existingvolume), while still allowing us 
+#     # to utilize the fast, ephemeral emptyDir type volumes for use cases where that is useful (for example, if 
+#     # transfering data between containers, when a command runs actions in multiple containers).
+#     #
+#     # My expectation is that any volumes created by this would be RWO, with all component containers running in a single ("fat") pod.
+#     size: 1Gi # kube only
+#     subPath: /some/folder # Optional location within the volume to mount.
+    
+# CHANGE (from both IDP/dev file): Actions is moved to a top level element, and given an id, to allow reuse by commands.
+actions:
+
+  # Action containers will ALWAYS stay up and be reused after they are used (eg they will never be disposed of after a single use).
+  - id: full-maven-build
+    type: exec  # DISCUSSION: It MIGHT be worth using a new type for these, but I am leaving it as exec for now.
+    component: appsody-liberty-stack
+    command:
+    - /project/user-app/.udo/bin/runtime-container-full.sh # could also just be a normal command ala `mvn clean package`
+  
+    workDir: /project/user-app # optional, where in the container to run the command
+
+    # CHANGE (from IDP): sourceMappings and idpRepoMappings used to be at the task/action level; they are now at the container level.
+ 
+  # Action containers will ALWAYS stay up and be reused after they are used (eg they will never be disposed of after a single use).
+  - id: incremental-maven-build
+    type: exec  # DISCUSSION: It MIGHT be worth using a new type for these, but I am leaving it as exec for now.
+    component: appsody-liberty-stack
+    command:
+    - /project/user-app/.udo/bin/runtime-container-update.sh # could also just be a normal command ala `mvn clean package`
+  
+    workDir: /project/user-app # optional, where in the container to run the command
+
+    # CHANGE (from IDP): sourceMappings and idpRepoMappings used to be at the task/action level; they are now at the container level.
+
+
+components:
+
+  - id: appsody-liberty-stack  # DISCUSSION: Rename 'alias' to 'id'; alias implies (IMHO) that the user can specify multiple (which I presume is not intended)
+    type: dockerImage
+    image: appsody/java-openliberty:0.1
+
+    env: # Optional: Set key/value pairs in the container as environment variables
+    # - name: "A_ENV_VAR_KEY"
+    #   value: "an env var value"
+
+    command: ['sleep', 'infinity'] # Optional; used to override the container entrypoint.
+    # CHANGE (from dev file): I removed the 'args' field; I would expect args could be specified as part of command, like above, but feedback welcome (in case I am missing some obvious need to keep it as it was)
+
+    # Optional: Ability to map (either sync when an action is run, or mount) files in the local project directory into the container
+    sourceMapping: 
+      destPath: "/project/user-app" # path inside container to transfer/mount the source files
+      setExecuteBit: false # Set execute bit on all files in the directory (Optional, really only useful for sync: For Windows users (who have no native excute bit support from OS) with a source file directory that contains Linux scripts)
+    # This is used to know where the source files should be mounted/synced into the container
+    # Path should be a valid path within the container, up to consuming tool to decide what to do with it (mount it to source, or sync it)
+    #
+    # CHANGE (from dev file): replace mountSources with sourceMapping; for ODO there is no mount, rather it is a sync, likewise ability to customize target directory may be beneficial
+
+    # Optional: Automatically copy files/directories from the root location of the dev file (for example, a GitHub repo) to a container (eg before an action/command is run)
+    # This is a tool in the dev-file-writers arsenal, to make it easy to customize individual files/directories in container images without fully extending them with a new image.
+    # repoMappings:
+    # - srcPath: "/resources/scripts/build.sh"
+    #   destPath: "/scripts/build.sh"
+    #   setExecuteBit: true # Set execute bit on a single file
+    # - srcPath: "/scripts2" # path in remote git repo, where folder containing "idp.yaml" is /
+    #   destPath: "/home/user" # path inside container to upload the directory
+    #   setExecuteBit: true # Set execute bit on all files in the directory (required for windows local, git repos without execute, http serving)  
+
+    # CHANGE (from dev file): memoryLimit moved to under Kubernetes (Why? While Docker containers CAN have memory limits, this is much less common in dev scenarios)
+
+    # kubernetes: # Optional, values only used for Kube deployments
+    #   livenessProbe: # Optional
+    #     initialDelaySeconds: 15
+    #     timeoutSeconds: 60
+
+    #   readinessProbe: # Optional
+    #     initialDelaySeconds: 15
+    #     timeoutSeconds: 60
+
+    #   requests: # Optional
+    #     memory: "64Mi"
+    #     cpu: "250m"
+    #   limits:  # Optional
+    #     memory: "128Mi"
+    #     cpu: "500m"
+
+    # volumes: # CHANGE: This is now a reference to a volume entry in `.shared.volumes` (see above), rather than a volume definition itself.
+    # - name: my-data-volume
+    #   containerPath: /some/path/in/container/my-data-folder
+
+    privileged: false # Optional, default: false.        
+    
+commands:
+  - name: Full build # A display name, optional, default to empty; should be expected to be displayed to the user if specified 
+    id: full-build  # In some scenarios (such as our UDO IDP scenarios) it will be beneficial to be able to programatically locate commands by id.
+    sequential: false # Optional, boolean true/false. Whether multiple instances of the command can be running at a time. (Mainly used to enforce a single running command at a time, for commands that need a mutex, like build)
+    actions: ["full-maven-build"] # CHANGE: actions moved to their own section, so IDs are referenced here (this allows reuse of the same action in multiple commands.)
+
+  - name: Incremental build
+    id: incremental-build
+    sequential: true
+    actions: ["incremental-maven-build"] # incremental-maven-build not actually defined in this sample
+
+
+# DISCUSSION: Looking for a better name for this top-level section, if there are any suggestions.
+#
+# These are items that are specific to ODO scenarios.
+# If Che et al wanted to adopt one or more these functionalites, then we can 'promote' them out of this section.
+odo: # Optional
+  watchedPath: # Optional
+    # Which path to watch for changes, from the root folder of the project ('odo watch')
+    # For example /codewind-workspace/my-project would be /
+    watchDir: /src # Optional, otherwise assumed to be the root /
+    ignoredPaths: # Same format as filewatcher, Optional, if not specified then no excludes.
+    - /target
+    - /some.file
+
+  # DISCUSSION: Could merge with above; depends if there exist cases where we want a file/directory change to trigger a build (watchedPath) but not sync/upload that file (uploadFilter)
+  uploadFilter: # Optional
+    ignoredPaths: # Same format as filewatcher, Optional, if not specified then no excludes.
+    - /target # For a Maven-based Java project, don't sync the `/target` dir
+
+  typeDetection: # Optional
+  # Optional: Rules that are used to detect if this dev file is applicable to a given project.
+  # This can be used to detect the type of a project on a user's machine (and present them with a list of possible matching dev files)
+  # For example, allow a UI to show a WildFly dev file in a list of applicable dev files, if the rule described below detects that the user's project dir contains a WildFly-based app.
+  #
+  # Rule engine is composed of rules joined by OR-clauses, with a rule being: 
+  # - look for a specific file with a specific name (eg pom.xml) and, optionally, ONLY true if there is a specific string in the file, (like a WildFly Maven coordinate)
+  #
+  # At least one rule must match for a type to be considered to be 'detected'
+  - pathSelector: # At least one 'pathSelector' entry must exist if typeDetection is specified
+      # Optional, Either a 'rootPath' xor a 'filenameWildcard' must be specified
+      rootPath: # example: /pom.xml, or /go.mod
+      filenameWildcard: # example: server.xml, or *.go; this means recursively walk a project and look for filenames that match this pattern. Same pattern style as filewatcher.
+    textStringsToMatch: # Optional: If a file matches one of the selectors, then look for at least one of these strings (ie OR clause list, not AND clause list). 
+    - net.wasdev.wlp.maven.plugins # Example: if this ID is found in the file, then this IDP should be considered to be applicable to the project
